@@ -1,21 +1,24 @@
 #OpenSourcery KegBot
 The following is a brain dump by me (@nielsonm) following a marathon Code Rally brainstorm with @ghyspran on the functionality and technologies surrounding the construction of a kegbot for OpenSourcery.
 
-## Hardware
+## System Requirements
+### Hardware
 Raspberry Pi
 
 Arduino
 
 2x16 char display
 
+### Software
+#### Raspberry Pi
+Python 3
+PySerial
+PyMongo
+MongoDB
 
-## Software
-Operating code mostly in Python
-
-Data in MongoDB
-
-WEB UI in Node
-
+#### Web Interface
+Node.js
+MongoDB
 
 ## Plan
 ### Phase I - Percentage to empty calculation
