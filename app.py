@@ -1,33 +1,47 @@
 #!/usr/bin/env python
-from flask import Flask, jsonify
-from kegbot import keg
+import time, httplib, logging, socket
 
-app = Flask(__name__)
+remote = {
+  'domain': 'localhost',
+  'port': '8888',
+  'path': '/',
+}
 
-@app.route('/keg/', methods = ['GET'])
+state = {
+  'kegs': {
+    1: 0,
+    2: 0,
+  },
+  'environment': {
+    'temp': 0,
+  },
+}
 
-def get_keg():
-  return jsonify({
-    'kegs': [ 1, 2 ]
-  })
-
-@app.route('/keg/<int:keg_id>', methods = ['GET', 'POST', 'DELETE'])
-def get_keg_n(keg_id):
-  keg_state_get(keg_id)
-  keg_state = {
-    'id': keg_id,
-    'state': 0.9
+def get_arduino_state():
+  return {
+    'kegs': {
+      1: 12,
+      2: 15,
+    },
+    'environment': {
+      'temp': 38,
+    },
   }
-  return jsonify(keg_state)
 
-def post_keg(keg_id):
-  if not request.get_json():
-    abort(400)
-  print request.get_json()
-  return 'Keg ' + str(keg_id) + ' added'
+def push_state(remote, state):
+  post = httplib.HTTPConnection(remote['domain'], remote['port'])
+  headers = {"Content-type": "application/json"}
+  try:
+    post.request('POST', remote['path'], state, headers)
+  except socket.error:
+    # do nothing
+    None
 
-def delete_keg(keg_id):
-  return 'Keg ' + str(keg_id) + ' deleted'
-
-if __name__ == '__main__':
-  app.run(debug = True)
+while True:
+  current_state = get_arduino_state()
+  if current_state == state:
+    time.sleep(60)
+  else:
+    state = current_state
+    push_state(remote, state)
+    time.sleep(4)
