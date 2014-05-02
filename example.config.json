@@ -1,0 +1,9 @@
+{
+  "access_token": "SECRETKEY",
+  "remote": {
+    "domain": "beer.opensourcery.com",
+    "port": "80",
+    "path": "/api"
+  },
+  "serial": "/dev/ttyACM0"
+}

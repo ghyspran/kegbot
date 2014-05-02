@@ -1,47 +1,50 @@
 #!/usr/bin/env python
-import time, httplib, logging, socket
+import httplib, logging, json, socket, serial, urllib
+from pprint import pprint
 
-remote = {
-  'domain': 'localhost',
-  'port': '8888',
-  'path': '/',
-}
+with open('config.json') as json_data:
+  config = json.load(json_data)
+
+ser = serial.Serial(config['serial'], 9600)
 
 state = {
-  'kegs': {
-    1: 0,
-    2: 0,
-  },
-  'environment': {
-    'temp': 0,
-  },
+  'kegs': [ 0, 0 ],
+  'temperature': 0,
+  'access_token': config['access_token']
 }
 
 def get_arduino_state():
-  return {
-    'kegs': {
-      1: 12,
-      2: 15,
-    },
-    'environment': {
-      'temp': 38,
-    },
-  }
+  value = ser.readline().strip()
+  if value:
+    values = value.split(',')
+    values[0] = (9 / 5) * ( float(values[0]) - 273) + 32
+    return {
+      'kegs': [ float(values[1]), float(values[2]) ],
+      'temperature': values[0],
+      'access_token': config['access_token']
+    }
 
 def push_state(remote, state):
-  post = httplib.HTTPConnection(remote['domain'], remote['port'])
-  headers = {"Content-type": "application/json"}
+  post = httplib.HTTPConnection(remote['domain'], str(remote['port']))
+  headers = {"Content-type": "application/x-www-form-urlencoded", "Accept": "text/plain"}
+  state = urllib.urlencode(state)
   try:
     post.request('POST', remote['path'], state, headers)
-  except socket.error:
-    # do nothing
-    None
+    print "Posted "
+    pprint(state)
+    print " to "
+    pprint(remote)
+    print " with response "
+    pprint(post.getresponse().read())
+  except socket.error, e:
+    print "Error posting "
+    pprint(state)
+    print " to "
+    pprint(remote)
+    print "Error: " + str(e)
 
 while True:
   current_state = get_arduino_state()
-  if current_state == state:
-    time.sleep(60)
-  else:
+  if current_state:
     state = current_state
-    push_state(remote, state)
-    time.sleep(4)
+    push_state(config['remote'], state)
